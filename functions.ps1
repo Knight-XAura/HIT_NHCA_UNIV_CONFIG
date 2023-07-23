@@ -1,6 +1,21 @@
 ### Heart of Configuration Script ###
 
-### 1.1 Check if on battery ### # Not well tested nor is this or any other way supported fully
+### Check Enclosure Type ###
+
+function Get-ComputerType {
+    $desktopChassisTypes = @(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
+
+    $systemEnclosure = Get-WmiObject Win32_SystemEnclosure
+
+    if ($desktopChassisTypes -contains $systemEnclosure.ChassisTypes[0]) {
+        return "Desktop"
+    }
+    else {
+        return Check-PluggedIn
+    }
+}
+
+### 1.1 Check if on battery ###
 
 function Check-PluggedIn {
 
@@ -32,12 +47,12 @@ function Check-PluggedIn {
 
 	if ( [BOOL](Get-WmiObject -Class BatteryStatus -Namespace root\wmi ` -ComputerName "localhost").PowerOnLine ) {
 		Write-Host = "Computer is on AC Power and ready to continue. Please be mindful of the Battery Level:"
-		Write-Host $("	Current Charge: $BatteryCharge" + "%")
+		Write-Host $("    Current Charge: $BatteryCharge" + "%")
 	}
 
 	else {
 		Write-Host "Computer is on battery. Please be mindful of the Battery Level. Please be on AC Power before continuing if possible..."
-		Write-Host $("	Current Charge: $BatteryCharge" + "%")
+		Write-Host $("    Current Charge: $BatteryCharge" + "%")
 		Pause
 	}
 
@@ -65,7 +80,6 @@ function Add-SoftwareDownloadQueue {
 	Start-BitsTransfer -DisplayName "OpenVPN" -Source https://openvpn.net/downloads/openvpn-connect-v3-windows.msi -Destination .\HIT_NHCA_Downloads\VPN\OpenVPN.msi -Asynchronous -Priority Foreground
 	# Start-BitsTransfer -DisplayName "Ninite" -Source https://ninite.com/7zip-chrome/ninite.exe -Destination .\HIT_NHCA_Downloads\Ninite.exe -Asynchronous -Priority Foreground
 	Start-BitsTransfer -DisplayName "Adobe" -Source http://ardownload.adobe.com/pub/adobe/reader/win/AcrobatDC/2001320064/AcroRdrDC2001320064_en_US.exe -Destination .\HIT_NHCA_Downloads\Adobe_Reader_DC.exe -Asynchronous -Priority Foreground
-	# Start-BitsTransfer -DisplayName "Uninstall_O365" -Source https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Remove-PreviousOfficeInstalls/OffScrubc2r.vbs -Destination .\HIT_NHCA_Downloads\3rd_Party_Scripts\Uninstall_O365.vbs -Asynchronous -Priority Foreground
 }
 
 ### 2.3. Check Transfers and run complete ###

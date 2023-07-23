@@ -48,7 +48,7 @@ while (-not $validURL) {
                 }
                 # Download the file
                 #Invoke-WebRequest -Uri $itemUrl -OutFile $itemPath
-                Start-BitsTransfer -Source $itemURL -Destination $itemPath -DisplayName "$itemPath" -Priority Foreground # $item.name
+                Start-BitsTransfer -Source $itemURL -Destination $itemPath -DisplayName "$itemPath" -Asynchronous -Priority Foreground # $item.name
             }
         }
     }

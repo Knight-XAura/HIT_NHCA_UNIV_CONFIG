@@ -96,7 +96,7 @@ Switch ($ConfigType) {
 		Switch ($ConfigStage) {
 			1 { # Pre-Config / Pre-Domain
 				Write-Host "Starting Pre-Config Part 1 of 2..."
-				Check-PluggedIn
+				Get-ComputerType
 				Change-SystemTimeoutStart
 				Add-SoftwareDownloadQueue
 				Add-DesktopShortcuts
