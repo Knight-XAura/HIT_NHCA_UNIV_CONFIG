@@ -43,6 +43,9 @@ while (-not $validURL) {
                 Download-RepoContents -contents $subContents -basePath $itemPath
             }
             else {
+                if ($item.name -eq "download.ps1" -or $item.name -eq ".gitattributes" -or $item.name -eq "scenario runbook.txt") {
+                    continue
+                }
                 # Download the file
                 Invoke-WebRequest -Uri $itemUrl -OutFile $itemPath
             }
