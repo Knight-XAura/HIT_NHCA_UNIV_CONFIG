@@ -1,5 +1,5 @@
-﻿# Download Locationi
-$localDirectory = Join-Path -Path C:\ -ChildPath "HIT_NHCA_UNIV_CONFIG"
+﻿# Download Location
+$downloadPath = Join-Path -Path C:\ -ChildPath "HIT_NHCA_UNIV_CONFIG"
     
 while (-not $validURL) {
     # Ask for the repository URL
@@ -30,7 +30,7 @@ while (-not $validURL) {
             [string]$basePath
         )
         foreach ($item in $contents) {
-            $itemUrl = $item.download_url
+            $itemURL = $item.download_url
             $itemPath = Join-Path -Path $basePath -ChildPath $item.name
 
             if ($item.type -eq "dir") {
@@ -43,11 +43,12 @@ while (-not $validURL) {
                 Download-RepoContents -contents $subContents -basePath $itemPath
             }
             else {
-                if ($item.name -eq "download.ps1" -or $item.name -eq ".gitattributes" -or $item.name -eq "scenario runbook.txt") {
+                if ($item.name -eq "download.ps1" -or $item.name -eq ".gitattributes" -or $item.name -eq ".gitignore") {
                     continue
                 }
                 # Download the file
-                Invoke-WebRequest -Uri $itemUrl -OutFile $itemPath
+                #Invoke-WebRequest -Uri $itemUrl -OutFile $itemPath
+                Start-BitsTransfer -Source $itemURL -Destination $itemPath -DisplayName "$itemPath" -Priority Foreground # $item.name
             }
         }
     }
@@ -56,9 +57,9 @@ while (-not $validURL) {
         try {
             Write-Host "Downloading repository contents..."
             $repoContents = Invoke-RestMethod -Uri "https://api.github.com/repos/$repoOwner/$repoName/contents"
-            New-Item -ItemType Directory -Path $localDirectory | Out-Null
-            Download-RepoContents -contents $repoContents -basePath $localDirectory 
-            Write-Host "Repository downloaded successfully to: $localDirectory"
+            New-Item -ItemType Directory -Path $downloadPath | Out-Null
+            Download-RepoContents -contents $repoContents -basePath $downloadPath 
+            Write-Host "Repository downloaded successfully to: $downloadPath"
             $validURL = $true
             $isDownloaded = $true
         }
@@ -70,8 +71,8 @@ while (-not $validURL) {
             }
 
             else {
-                if (Test-Path -Path $localDirectory -PathType Container) {
-                    Remove-Item -Path $localDirectory -Recurse -Force
+                if (Test-Path -Path $downloadPath -PathType Container) {
+                    Remove-Item -Path $downloadPath -Recurse -Force
                 }
                 $isDownloaded = $false
                 $repoURL = $null
