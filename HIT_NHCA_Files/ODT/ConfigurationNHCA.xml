@@ -1,0 +1,18 @@
+<Configuration ID="4511920e-1707-490e-bca5-797637a5d819">
+  <Add OfficeClientEdition="64" Channel="Current" SourcePath="\\10.101.50.23\it\ODT" AllowCdnFallback="TRUE">
+    <Product ID="O365BusinessRetail">
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+    </Product>
+  </Add>
+  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="SCLCacheOverride" Value="0" />
+  <Property Name="AUTOACTIVATE" Value="0" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="FALSE" />
+  <Property Name="DeviceBasedLicensing" Value="0" />
+  <Updates Enabled="FALSE" />
+  <AppSettings>
+    <Setup Name="Company" Value="National Health Aare Associates Inc." />
+  </AppSettings>
+  <Display Level="Full" AcceptEULA="TRUE" />
+</Configuration>

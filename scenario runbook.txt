@@ -1,0 +1,16 @@
+Microsoft Account and Bitlocker Fix
+	Create Local Admin
+	Logout
+	Login to Local Admin
+	(Maybe a good time to pull all users who aren't in on every machine consistently by default)
+	Remove Microsoft Account (?Get-CimInstance -Class Win32_UserProfile | Where-Object { $_.LocalPath.split('\')[-1] -eq '<username>' } | Remove-CimInstance?)?
+	remove-localuser -Name "<username>"
+	If Desktop - Remove Bitlocker (Disable-BitLocker -MountPoint "C:")
+	else - Associate later with Primary Users Microsoft Account
+
+Remote Connection
+	& "C:\Program Files\OpenVPN Connect\OpenVPNConnect.exe" --accept-gdpr --skip-startup-dialogs --import-profile=C:\Users\sysop\Desktop\HIT_NHCA-UNIV_CONFIG\HIT_NHCA_Files\VPN\Profile\mtsadmin.ovpn --name=mtsadmin --username=mtsadmin --password=<replace with secured variable>
+	Retrieve ID
+	Setup Task Scheduler for running the set connection shortcut
+	Edit it's Properties and change the ID to the one retrieved
+	
