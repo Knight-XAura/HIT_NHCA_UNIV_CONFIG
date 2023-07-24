@@ -1,14 +1,14 @@
 # Check if script is running as an Administrator, if not rerun the script as Administartor
 ##Requires -RunAsAdministrator
 
-Write-Host $PID
-read-host
-# Check if the script is running with administrative privileges
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-{
-    Write-Host "Running without administrative privileges. Attempting to elevate..."
-    Start-Sleep -Seconds 1
+param (
+            [bool]$RepairMenu,
+            [string]$RunStage
+)
 
+# Check if the script is running with administrative privileges
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Running without administrative privileges. Attempting to elevate..."
     # Re-launch the script with elevated privileges
     Start-Process powershell.exe -Verb RunAs -ArgumentList "-File `"$PSCommandPath`""
     exit
@@ -16,19 +16,13 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # Your elevated code goes here
 Write-Host "Running with administrative privileges!"
-Start-Sleep -Seconds 1
 
 # Set the Execution Policy to allow the script to run
 Set-ExecutionPolicy -ExecutionPolicy Bypass # Current Script Execution Policy only
 
-# Change directories to the folder this script exists in
-cd $PSScriptRoot
-
-# Call functions.ps1 to pair the heart of our code with the brains
-. .\functions.ps1
-
 # Check Folder Exist in C: and if not then Copy folder, if failed then ask to try again or close the script
 if ($PSScriptRoot -ne "C:\HIT_NHCA_UNIV_CONFIG") {
+    cd $PSScriptRoot
     while (-not $isSuccessful) {
         try {
             # Perform the copy operation recursively and preserve attributes
@@ -60,13 +54,30 @@ if ($PSScriptRoot -ne "C:\HIT_NHCA_UNIV_CONFIG") {
         $scriptPath = "C:\HIT_NHCA_UNIV_CONFIG\logic.ps1"
 
         # Rerun the script from the specified location
-        Start-Process -UseNewEnvironment -RedirectStandardError "C:\output.txt" -FilePath "powershell.exe" -ArgumentList "-File '$scriptPath'"
+        Start-Process powershell.exe -ArgumentList "-File `"$scriptPath`""
 
         # Close the current script
         Stop-Process -Id $PID
 
     }
 }
+
+# Change directories to the folder this script exists in
+cd $PSScriptRoot
+
+if ($RepairMenu -eq $true) {
+        # Define the path to the Repair Menu
+        $scriptPath = "repair.ps1"
+
+        # Rerun the script from the specified location
+        Start-Process powershell.exe -ArgumentList "-File `"$scriptPath`""
+
+        # Close the current script
+        Stop-Process -Id $PID
+}
+
+# Call functions.ps1 to pair the heart of our code with the brains
+. .\functions.ps1
 
 # Get Stage script was on
 $stage = (Get-ItemProperty -Path "HKLM:\Software\HNUC" -Name "Stage" -ErrorAction SilentlyContinue).Stage

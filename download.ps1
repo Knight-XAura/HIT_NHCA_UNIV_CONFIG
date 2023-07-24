@@ -52,7 +52,6 @@ while (-not $validURL) {
             }
         }
     }
-    Write-Host $isDownloaded
     while (-not $isDownloaded) {
         try {
             Write-Host "Downloading repository contents..."

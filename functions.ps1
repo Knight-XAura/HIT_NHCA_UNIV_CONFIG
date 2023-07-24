@@ -1,6 +1,6 @@
 ### Heart of Configuration Script ###
 
-### Determine how the script should run ###
+### Do System Checks and Find where the script should start ###
 
 ### 0.1 
 
