@@ -1,6 +1,8 @@
 # Check if script is running as an Administrator, if not rerun the script as Administartor
 ##Requires -RunAsAdministrator
 
+Write-Host $PID
+read-host
 # Check if the script is running with administrative privileges
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 {
@@ -25,41 +27,91 @@ cd $PSScriptRoot
 # Call functions.ps1 to pair the heart of our code with the brains
 . .\functions.ps1
 
-# Copy folder, if failed then ask to try again or close the script
+# Check Folder Exist in C: and if not then Copy folder, if failed then ask to try again or close the script
+if ($PSScriptRoot -ne "C:\HIT_NHCA_UNIV_CONFIG") {
+    while (-not $isSuccessful) {
+        try {
+            # Perform the copy operation recursively and preserve attributes
+            Copy-Item -Path . -Destination C:\ -Recurse -Force
 
-while (-not $isSuccessful) {
-    try {
-        # Perform the copy operation recursively and preserve attributes
-        Copy-Item -Path . -Destination C:\ -Recurse -Force
-
-        Write-Host "Files copied successfully to: C:\HIT_NHCA_UNIV_CONFIG"
-        $isSuccessful = $true
-    }
-    catch {
-        # If the copy operation fails, display a warning message
-        Write-Host "Failed to copy files. Error: $_"
-
-        # Ask if the user wants to try again
-        $isRetrying = Read-Host "Do you want to try again? (Yes/No)"
-        if ($isRetrying -ne "Yes") {
-            $isSuccessful = $false
+            Write-Host "Files copied successfully to: C:\HIT_NHCA_UNIV_CONFIG"
+            $isSuccessful = $true
         }
+        catch {
+            # If the copy operation fails, display a warning message
+            Write-Host "Failed to copy files. Error: $_"
 
-        else {
-            return # Exits if the user doesn't want to retry and keeps from deleting files - This is for making troubleshooting much easier
-        }
+            # Ask if the user wants to try again
+            $isRetrying = Read-Host "Do you want to try again? (Yes/No)"
+            if ($isRetrying -ne "Yes") {
+                $isSuccessful = $false
+            }
 
-        # Delete the destination folder if it exists before retrying
-        if (Test-Path -Path C:\HIT_NHCA_UNIV_CONFIG -PathType Container) {
-            Remove-Item -Path C:\HIT_NHCA_UNIV_CONFIG -Recurse -Force
+            else {
+                return # Exits if the user doesn't want to retry and keeps from deleting files - This is for making troubleshooting much easier
+            }
+
+            # Delete the destination folder if it exists before retrying
+            if (Test-Path -Path C:\HIT_NHCA_UNIV_CONFIG -PathType Container) {
+                Remove-Item -Path C:\HIT_NHCA_UNIV_CONFIG -Recurse -Force
+            }
         }
+        # Define the path to the script in the other location
+        $scriptPath = "C:\HIT_NHCA_UNIV_CONFIG\logic.ps1"
+
+        # Rerun the script from the specified location
+        Start-Process -UseNewEnvironment -RedirectStandardError "C:\output.txt" -FilePath "powershell.exe" -ArgumentList "-File '$scriptPath'"
+
+        # Close the current script
+        Stop-Process -Id $PID
+
     }
 }
 
+# Get Stage script was on
+$stage = (Get-ItemProperty -Path "HKLM:\Software\HNUC" -Name "Stage" -ErrorAction SilentlyContinue).Stage
 
-#Define needed Variables
-$isLaptop
-$isRemote
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 $CT_ARange = 1..4
 while ($CT_ARange -notcontains $ConfigType) {
@@ -89,63 +141,4 @@ while ($CL_ARange -notcontains $ConfigLocation) {
 
 if ($ConfigLocation -eq "2") {
 	$isRemote = $true
-}
-
-Switch ($ConfigType) {
-	1 {
-		Switch ($ConfigStage) {
-			1 { # Pre-Config / Pre-Domain
-				Write-Host "Starting Pre-Config Part 1 of 2..."
-				Get-ComputerType
-				Change-SystemTimeoutStart
-				Add-SoftwareDownloadQueue
-				Add-DesktopShortcuts
-				Check-SoftwareDownloadQueue
-				Remove-Office
-				Add-OpenVPN
-				Add-Adobe
-				Add-NiniteScript
-				Add-Agent
-				New-SysopAdmin
-				hostname | Set-Clipboard
-				hostname
-				Pause
-				#Stop-Process -Name 'OpenVPNConnect' -Force
-				Add-Domain
-			}
-
-			2 { # Pre-Config / Post Domain
-				#Part 2 of 2
-				Write-Host "Starting Pre-Config Part 2 of 2..."
-				#& "C:\Program Files\OpenVPN Connect\OpenVPNConnect.exe"
-				#Write-Host "Connect to VPN before continuing"
-				#pause
-				#Write-Host "Switch Users to login as mtsadmin"
-				#pause
-				Add-Office
-				Write-Host "Make sure Office is done installing before continuing"
-				pause
-				Change-SystemTimeoutEnd
-				Update-System
-				Write-Host "Make sure everything is completed. Continuing will restart the computer."
-				pause
-				shutdown /r
-			}	
-		}
-	}
-
-	2 {		
-		Write-Host "Starting Post Config..."
-		Pause
-		Remove-AnyUser
-		#Bitlocker and such thing that only happen after user has computer and we initially get in
-	}
-
-	3 {
-
-    }
-
-	4 {
-
-	}
 }

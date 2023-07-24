@@ -1,6 +1,20 @@
 ### Heart of Configuration Script ###
 
-### Check Enclosure Type ###
+### Determine how the script should run ###
+
+### 0.1 
+
+### 1.1 Set System Power Settings ###
+
+function Change-SystemTimeoutStart {
+	Powercfg /Change monitor-timeout-ac 0
+	Powercfg /Change monitor-timeout-dc 0
+	Powercfg /Change standby-timeout-ac 0
+	Powercfg /Change standby-timeout-dc 0
+
+}
+
+### 1.2 Check Enclosure Type ###
 
 function Get-ComputerType {
     $desktopChassisTypes = @(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
@@ -15,58 +29,63 @@ function Get-ComputerType {
     }
 }
 
-### 1.1 Check if on battery ###
+### 1.3 Check Battery Status ###
 
-function Check-PluggedIn {
+function Get-BatteryStatus {
+    $batteryReport = Get-WmiObject Win32_Battery
+    if ($batteryReport) {
+        $status = $batteryReport.EstimatedChargeRemaining
+        $percentage = $batteryReport.EstimatedChargeRemaining
+        $powerStatus = $batteryReport.PowerOnline
 
-	$BatteryStatus = @{
-  		Name = 'BatteryStatusText'
-  		Expression = {
-    			$value = $_.BatteryStatus
-    
-    			switch([int]$value) {
-        			1 {'Battery Power'}
-        			2 {'AC Power'}
-        			3 {'Fully Charged'}
-       				4 {'Low'}
-        			5 {'Critical'}
-        			6 {'Charging'}
-        			7 {'Charging and High'}
-        			8 {'Charging and Low'}
-        			9 {'Charging and Critical'}
-        			10 {'Undefined'}
-        			11 {'Partially Charged'}
-        			default {"$value"}
-    			}
-  		}  
-	}
+        # Convert status to text representation
+        $statusText = switch ($status) {
+            2 { "Fully Charged" }
+            3 { "Discharging" }
+            4 { "Charging" }
+            5 { "Waiting for Charging" }
+            6 { "Waiting for Discharging" }
+            default { "Check Status Manually" }
+        }
+    }
+    else {
+        Write-Host "Battery information not available. Please check manually"
+        Read-Host
+    }
 
-	Get-CimInstance -ClassName Win32_Battery | Select-Object -Property BatteryStatus, $BatteryStatus
+    if ($batteryReport) {
+        Write-Host "Battery Status: $($batteryReport.Status)"
+        Write-Host "Battery Percentage: $($batteryReport.Percentage)%"
 
-	$BatteryCharge = Get-CimInstance -ClassName Win32_Battery | Measure-Object -Property EstimatedChargeRemaining -Average | Select-Object -ExpandProperty Average
-
-	if ( [BOOL](Get-WmiObject -Class BatteryStatus -Namespace root\wmi ` -ComputerName "localhost").PowerOnLine ) {
-		Write-Host = "Computer is on AC Power and ready to continue. Please be mindful of the Battery Level:"
-		Write-Host $("    Current Charge: $BatteryCharge" + "%")
-	}
-
-	else {
-		Write-Host "Computer is on battery. Please be mindful of the Battery Level. Please be on AC Power before continuing if possible..."
-		Write-Host $("    Current Charge: $BatteryCharge" + "%")
-		Pause
-	}
-
+        if ($batteryReport.Percentage -lt 50 -and -not $batteryReport.PowerStatus) {
+            Write-Host "Battery is less than 50% and not plugged in."
+            Read-Host "Press Enter to continue..."
+        }
+    }
 }
 
-### 1.2. Set System Power Settings ###
+### 1.4 Create Variable Persistent between reboots  ###
 
-function Change-SystemTimeoutStart {
-	Powercfg /Change monitor-timeout-ac 0
-	Powercfg /Change monitor-timeout-dc 0
-	Powercfg /Change standby-timeout-ac 0
-	Powercfg /Change standby-timeout-dc 0
+function Add-StageKey {
+   if (Test-Path -Path "HKLM:\Software\HNUC") {
+        # Define the name and value of the persistent variable
+        $variableName = "Stage"
+        $variableValue = "0"
 
+        # Retrieve the value of the persistent variable
+        $existingValue = Get-ItemProperty -Path "HKLM:\Software\HNUC" -Name $variableName | Select-Object -ExpandProperty $variableName
+
+        # Check if the persistent variable exists and display its value
+        if ($existingValue) {
+            # Create or update the variable in the Windows Registry
+            New-ItemProperty -Path "HKLM:\Software\HNUC" -Name $variableName -Value $variableValue -PropertyType String -Force
+        } else {
+            Write-Host "Persistent variable '$variableName' exists, but its value is empty."
+        }
+    }
 }
+
+
 
 ### Download and Install/Uninstall Software ###
 
@@ -256,6 +275,12 @@ function Change-SystemTimeoutEnd {
 	Powercfg /Change standby-timeout-dc 15
 	Powercfg /Change standby-timeout-ac 30
 
+}
+
+### Remove Persistent Variable ###
+
+function Remove-StageKey {
+    Remove-Item -Path "HKLM:\Software\HNUC" -Recurse -Force
 }
 
 ### Restart computer ###
